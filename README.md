@@ -1,55 +1,73 @@
-**_Projeto de Integração com RabbitMQ usando o Padrão PUB/SUB + Docker:_**
+# Sistema de Pagamentos com RabbitMQ e Spring Boot
 
-_Este projeto exemplifica a implementação de uma integração entre duas aplicações independentes -
-utilizando o padrão Publish/Subscribe (PUB/SUB) via RabbitMQ. O objetivo principal é demonstrar a comunicação assíncrona e o desacoplamento temporal entre serviços, evitando dependências fortes e pontos de falha._
+## Tecnologias Utilizadas
 
-**_Contexto:_**
+- Java
+- Spring Boot
+- Spring AMQP (RabbitMQ)
+- Docker
+- Gradle
+- Jackson (para serialização JSON)
 
-_Na atual era dos microserviços, enfrentamos desafios na comunicação entre diferentes partes de um sistema. A utilização de processos assíncronos e a separação temporal entre serviços são abordagens essenciais para garantir a resiliência e escalabilidade dos sistemas. O padrão de mensageria PUB/SUB é uma técnica que se alinha bem a essa abordagem, permitindo que uma aplicação envie mensagens (Publisher) para uma fila ou tópico, enquanto outra aplicação as processa (Subscriber)._
+## Estrutura do Projeto
 
-**_Funcionalidades Principais:_**
+### Módulo `Consumer`
 
-_1)_**API (Publisher):** _A API é responsável por receber requisições via endpoint e enviar mensagens para uma fila no RabbitMQ. Ela ilustra como a comunicação assíncrona pode ser implementada, enviando mensagens para que sejam processadas posteriormente._
+#### `PagamentoErroProdutor` e `PagamentoSucessoProdutor`
 
-_2)_**Aplicação de Linha de Comando (Consumer):** _A aplicação de linha de comando atua como um consumidor de mensagens. Ela se conecta à fila do RabbitMQ, recebe as mensagens enviadas pela API e as processa de acordo com a lógica de negócios definida._
+Classes responsáveis por produzir mensagens de sucesso ou erro para o RabbitMQ.
 
-**_Como Executar o Projeto:_**
+#### `PagamentoRequestConsumidor`
 
-_1)_ **Configuração do RabbitMQ:**
+Classe que consome mensagens da fila `pagamento-request-queue`, simula processamento e envia uma resposta para as filas `pagamento-response-sucesso-queue` ou `pagamento-response-erro-queue`.
 
-* _Instale o Docker, caso ainda não o tenha;_
+#### `ConsumerApplication`
 
-* _Execute o RabbitMQ usando um contêiner Docker:_
-* **docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management**
+Classe principal Spring Boot que inicia a aplicação do consumidor.
 
-* _Acesse o painel de controle do RabbitMQ em http://localhost:15672, inserindo usuário e senhas iguais: **rabbitmq** e utilize as seguintes filas:_
+### Módulo `ApiBackEnd`
 
-_pagamento-request-queue_
+#### `PagamentoRequestProducer`
 
-_pagamento-response-erro-queue_
+Classe que produz mensagens contendo solicitações de pagamento para o RabbitMQ.
 
-_pagamento-responde-sucesso-queue_
+#### `PagamentoFacade`
 
-_2)_ **Compilando e Executando as Aplicações:**
+Classe que encapsula a lógica de negócios para solicitar pagamentos, tratando respostas de sucesso e erro.
 
-* _Compile e execute a API e a aplicação de linha de comando, utilizando as bibliotecas RabbitMQ mencionadas na documentação._
+#### `PagamentoDTO`
 
-* _Certifique-se de configurar corretamente a conexão com o RabbitMQ em ambas as aplicações._
+Classe que representa a estrutura de dados para informações de pagamento.
 
-_3)_ **Observando o Funcionamento:**
+#### `PagamentoResponseSucessoConsumidor` e `PagamentoResponseErroConsumidor`
 
-* _Envie uma requisição para a API via endpoint. Isso resultará no envio de uma mensagem para a fila do RabbitMQ._
+Classes que consomem respostas de sucesso ou erro do RabbitMQ e chamam métodos adequados na classe `PagamentoFacade`.
 
-* _A aplicação de linha de comando (Consumer) estará escutando a fila e processará a mensagem assim que estiver disponível._
+#### `PagamentoApi`
 
-**_Extra: Padrão Dead-Letter:_**
+Controlador Spring Boot que define o endpoint REST para processar solicitações de pagamento.
 
-_Este projeto também inclui uma simulação de erro aleatório durante o processo de consumo da mensagem. Quando esse erro ocorre, a mensagem é enviada para uma fila de "dead-letter". Isso ilustra como lidar com situações de erro de maneira apropriada e permite que a aplicação de linha de comando identifique e trate os erros de processamento._
+#### `ApiBackEndApplication`
 
-**_Bibliotecas e Frameworks:_**
+Classe principal Spring Boot que inicia a aplicação da API de backend.
 
-Este projeto foi desenvolvido com o foco em demonstrar a integração usando o RabbitMQ e não depende de frameworks específicos. Foram utilizadas as bibliotecas do RabbitMQ para Java mencionadas na documentação.
+## Como Testar e Executar o Projeto
 
-**_Conclusão:_**
+Certifique-se de ter o Docker instalado e seguir os passos abaixo:
 
-_Este projeto serve como um guia introdutório para implementar a comunicação assíncrona entre diferentes partes de um sistema usando o padrão PUB/SUB via RabbitMQ. O uso inteligente de mensageria e a separação temporal entre serviços podem melhorar a escalabilidade e a robustez de um sistema, evitando dependências excessivas. Em cenários reais, é importante considerar aspectos de gerenciamento de erros, escalabilidade e monitoramento para garantir o sucesso da arquitetura de comunicação._
+1. Clone o repositório.
+2. Abra o terminal na pasta do projeto.
+3. Execute o comando `docker-compose up` para iniciar os contêineres do RabbitMQ e das aplicações.
+4. As aplicações estarão disponíveis em http://localhost:8081 (API Backend) e http://localhost:8082 (Consumer).
+
+### Endpoints da API Backend
+
+- Processar Pagamento:
+  - Método: POST
+  - URL: http://localhost:8081/pagamentos
+  - Corpo: JSON com dados do pagamento (Número do Pedido, Valor, Produto).
+
+## Observações
+
+- Este projeto é um exemplo educacional de integração entre microsserviços utilizando RabbitMQ.
+- Certifique-se de ajustar as configurações do RabbitMQ conforme necessário nos arquivos de propriedades das aplicações.
