@@ -7,7 +7,6 @@
 - Spring AMQP (RabbitMQ)
 - Docker
 - Gradle
-- Jackson (para serialização JSON)
 
 ## Estrutura do Projeto
 
